@@ -10,7 +10,8 @@ function Convert-XlsToXlsx {
     }
 
     # Build output file path
-    $newFile = Join-Path $File.DirectoryName ($File.BaseName + "_ConvertedFromXls.xlsx")
+    $newFileName = Get-OutputFileName -File $File -Converted
+    $newFile = Join-Path $File.DirectoryName $newFileName
 
     # If already converted → reuse
     if (Test-Path $newFile) {

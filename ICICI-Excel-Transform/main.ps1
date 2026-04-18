@@ -48,7 +48,8 @@ foreach ($file in $files) {
         $result = Convert-ICICIFormat -File $workingFile
 
         # Step 3: Output file
-        $outFile = Join-Path $OutputFolder ($file.BaseName + "_Transformed.xlsx")
+        $outFileName = Get-OutputFileName -File $file -Converted:$($file.Extension -eq ".xls") -Transformed
+        $outFile = Join-Path $OutputFolder $outFileName
 
         # Step 4: Export
         $result | Export-Excel -Path $outFile -AutoSize -BoldTopRow
