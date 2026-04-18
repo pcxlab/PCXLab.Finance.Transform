@@ -2,7 +2,6 @@ param(
     [Parameter(Mandatory)]
     [string]$Folder,
 
-    [Parameter(Mandatory=$false)]
     [string]$OutputFolder
 )
 
@@ -11,7 +10,7 @@ if (-not (Test-Path $Folder)) {
     throw "Input folder does not exist: $Folder"
 }
 
-# If OutputFolder not provided → use same folder
+# Default output folder = same as input
 if (-not $OutputFolder) {
     $OutputFolder = $Folder
 }
@@ -21,42 +20,47 @@ if (!(Test-Path $OutputFolder)) {
     New-Item -ItemType Directory -Path $OutputFolder | Out-Null
 }
 
-# Add module path (temporary)
-$env:PSModulePath += ";C:\Projects\Automation\Modules"
-
-# Import module (no hardcoding needed if installed properly)
+# Import modules
+Import-Module PCXLab.Core -Force
 Import-Module PCXLab.Excel -Force
 
-# Get all files
+# Start logging
+Start-LogSession -LogFolder (Join-Path $Folder "logs")
+
+# Get files
 $files = Get-ChildItem $Folder -File
 
 foreach ($file in $files) {
 
-    # Skip already processed files
+    # Skip already processed
     if ($file.Name -match "_ConvertedFromXls" -or $file.Name -match "_Transformed") {
-        Write-Host "Skipping: $($file.Name)" -ForegroundColor DarkGray
+        Write-Log "Skipping: $($file.Name)"
         continue
     }
 
-    Write-Host "Processing: $($file.Name)" -ForegroundColor Cyan
+    Write-Log "Processing: $($file.Name)"
 
     try {
-        # Step 1: Convert (if needed)
+        # Step 1: Convert if needed
         $workingFile = Convert-XlsToXlsx -File $file
 
-        # Step 2: Transform (ONLY transform here, no conversion inside)
+        # Step 2: Transform
         $result = Convert-ICICIFormat -File $workingFile
 
-        # Step 3: Output file
-        $outFileName = Get-OutputFileName -File $file -Converted:$($file.Extension -eq ".xls") -Transformed
+        # Step 3: Output naming (clean centralized logic)
+        $outFileName = Get-OutputFileName `
+            -File $file `
+            -Converted:$($file.Extension -eq ".xls") `
+            -Transformed
+
         $outFile = Join-Path $OutputFolder $outFileName
 
         # Step 4: Export
         $result | Export-Excel -Path $outFile -AutoSize -BoldTopRow
 
-        Write-Host "Saved: $outFile" -ForegroundColor Green
+        Write-Log "Saved: $outFile" "SUCCESS"
     }
     catch {
-        Write-Host "Error processing $($file.Name): $($_.Exception.Message)" -ForegroundColor Red
+        Write-Log "Error processing $($file.Name): $($_.Exception.Message)" "ERROR"
     }
 }
