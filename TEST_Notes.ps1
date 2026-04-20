@@ -54,3 +54,22 @@ Then you can install modules into:
 C:\Users\Administrator\Documents\WindowsPowerShell\Modules
 
 #>
+
+cd C:\Projects\Automation
+Remove-Module PCXLab.Excel -ErrorAction SilentlyContinue
+Remove-Module PCXLab.Core -ErrorAction SilentlyContinue
+
+Import-Module .\Modules\PCXLab.Core -Force
+Import-Module .\Modules\PCXLab.Excel -Force
+
+
+
+.\PCXLab.Finance.Transform\main.ps1 -Folder "C:\TEST"
+
+Remove-Module PCXLab.Excel -ErrorAction SilentlyContinue
+Import-Module PCXLab.Excel -Force
+
+Get-Module PCXLab.Excel
+Get-Module PCXLab.Core
+
+Get-Module PCXLab.Excel -ListAvailable

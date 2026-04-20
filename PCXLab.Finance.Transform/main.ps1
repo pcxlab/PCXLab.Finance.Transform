@@ -14,6 +14,9 @@ $env:PSModulePath = "$modulePath;$env:PSModulePath"
 Import-Module PCXLab.Core -Force
 Import-Module PCXLab.Excel -Force
 
+Write-Log "Using PCXLab.Excel version: $((Get-Module PCXLab.Excel).Version)"
+Write-Log "Using PCXLab.Core version: $((Get-Module PCXLab.Core).Version)"
+
 # 🔹 Validate input folder
 if (-not (Test-Path $Folder)) {
     throw "Input folder does not exist: $Folder"
