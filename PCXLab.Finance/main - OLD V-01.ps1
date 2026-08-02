@@ -44,7 +44,7 @@ foreach ($file in $files) {
         continue
     }
 
-    if ($file.Extension -notin ".csv", ".xls", ".xlsx") {
+    if ($file.Extension -notin ".xls", ".xlsx") {
         Write-Log "Skipping unsupported file: $($file.Name)" "WARNING"
         continue
     }
@@ -55,53 +55,23 @@ foreach ($file in $files) {
 
         $result = $null
 
-        switch ($file.Extension.ToLower()) {
-
-            ".xls" {
-                $workingFile = Convert-XlsToXlsx -File $file
-                #$bank = Get-BankFromFile -File $workingFile
-            }
-        
-            ".csv" {
-                $workingFile = Convert-CsvToXlsx -File $file
-            }
-        
-            ".xlsx" {
-                $workingFile = $file
-            }
-        
-            default {
-                Write-Log "Unsupported extension: $($file.Extension)" "WARNING"
-                continue
-            }
+        if ($file.Extension -eq ".xls") {
+            $workingFile = Convert-XlsToXlsx -File $file
+        }
+        else {
+            $workingFile = $file
         }
 
-        #$bank = Get-BankFromFile -File $file
-        $bank = Get-BankFromFile -File $workingFile
+        $bank = Get-BankFromFile -File $file
 
         switch ($bank) {
 
             "ICICI" {
-
                 if ($file.Name -match "_DC_") {
-
                     $result = Convert-ICICIDCFormat -File $workingFile
-
-                }
-                <#
-                elseif ($file.Extension -eq ".csv") {
-
-                    $result = Convert-ICICICreditCardCSV -File $workingFile
-
-                }
-                #>
-                elseif ($file.Extension -ieq ".csv") {
-                    $result = Convert-ICICICreditCardCSV -File $workingFile
                 }
                 else {
-
                     $result = Convert-ICICIFormat -File $workingFile
-
                 }
             }
 
@@ -127,7 +97,7 @@ foreach ($file in $files) {
 
         $outFileName = Get-OutputFileName `
             -File $file `
-            -Converted:$($file.Extension -in ".xls", ".csv") `
+            -Converted:$($file.Extension -eq ".xls") `
             -Transformed
 
         $outFile = Join-Path $OutputFolder $outFileName

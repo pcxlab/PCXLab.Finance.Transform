@@ -1,44 +1,59 @@
-function Convert-XlsToXlsx {
+function Convert-CsvToXlsx {
+
     param(
         [Parameter(Mandatory)]
         [System.IO.FileInfo]$File
     )
 
-    # If already xlsx → return as is
-    if ($File.Extension -eq ".xlsx") {
+    # Already XLSX
+    if ($File.Extension -ieq ".xlsx") {
         return $File
     }
 
-    # Build output file path
+    # Only CSV supported
+    if ($File.Extension -ine ".csv") {
+        throw "File '$($File.Name)' is not a CSV file."
+    }
+
+    # Build output path
     $newFileName = Get-OutputFileName -File $File -Converted
     $newFile = Join-Path $File.DirectoryName $newFileName
 
-    # If already converted → reuse
+    # Reuse existing conversion
     if (Test-Path $newFile) {
         return Get-Item $newFile
     }
 
-    Write-Host "Converting XLS -> XLSX: $($File.Name)" -ForegroundColor Yellow
+    Write-Host "Converting CSV -> XLSX: $($File.Name)" -ForegroundColor Yellow
 
     $excel = New-Object -ComObject Excel.Application
     $excel.Visible = $false
     $excel.DisplayAlerts = $false
 
     try {
+
         $workbook = $excel.Workbooks.Open($File.FullName)
 
-        # 51 = xlOpenXMLWorkbook (.xlsx)
+        # xlOpenXMLWorkbook
         $workbook.SaveAs($newFile, 51)
 
-        $workbook.Close()
+        $workbook.Close($false)
     }
     catch {
-        throw "Failed to convert file: $($File.Name)"
+        throw "Failed to convert '$($File.Name)'"
     }
     finally {
+
+        if ($workbook) {
+            [System.Runtime.InteropServices.Marshal]::ReleaseComObject($workbook) | Out-Null
+        }
+
         $excel.Quit()
         [System.Runtime.InteropServices.Marshal]::ReleaseComObject($excel) | Out-Null
+
+        [GC]::Collect()
+        [GC]::WaitForPendingFinalizers()
     }
 
-    return Get-Item $newFile
+    Get-Item $newFile
 }
